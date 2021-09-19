@@ -1,4 +1,23 @@
 
+class ProcessInfo {
+    [int]$ExitCode;
+    [string[]]$Stdout;
+    [string[]]$Stderr;
+
+    ProcessInfo($ExitCode, $Stdout, $Stderr) {
+        $this.ExitCode = $ExitCode
+        $this.Stdout = $Stdout
+        $this.Stderr = $Stderr
+    }
+}
+
+class NativeCommandException : Exception {
+    [ProcessInfo]$ProcessInfo
+    
+    NativeCommandException($Message, $ProcessInfo) : base($Message) {
+        $this.ProcessInfo = $ProcessInfo
+    }
+}
 
 function Invoke-NativeApplication
 {
@@ -9,31 +28,24 @@ function Invoke-NativeApplication
         [switch]$IgnoreExitCode
     )
   
+    # Setting ErrorActionPreference to Continue so that piping STDERR to STDOUT won't throw an exception in 
+    # case of ErrorAction=Stop
     $backupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
-    try
+    $AllOutput = & $ScriptBlock 2>&1
+    $ErrorActionPreference = $backupErrorActionPreference
+    
+    $Stdout = $AllOutput | ?{ $_ -isnot [System.Management.Automation.ErrorRecord]}
+    $Stderr = $AllOutput | ?{ $_ -is [System.Management.Automation.ErrorRecord]}
+
+    $ProcessInfo = [ProcessInfo]::new($LastExitCode, $Stdout, $Stderr)
+    if (($AllowedExitCodes -notcontains $LASTEXITCODE) -and (-not $IgnoreExitCode))
     {
-        & $ScriptBlock 2>&1 | ForEach-Object -Process `
-            {
-                $isError = 
-                $_ -is [System.Management.Automation.ErrorRecord]
-                if($isError) {
-                    Write-Host "STDERR: $_" -ForegroundColor Red
-                }
-                else {
-                    "$_"
-                }
-            }
-        if (($AllowedExitCodes -notcontains $LASTEXITCODE) -and (-not $IgnoreExitCode))
-        {
-            echo "$($MyInvocation.ScriptName): Failed in $($MyInvocation.ScriptLineNumber)"
-            throw "Execution failed with exit code $LASTEXITCODE"
-        }
+        throw [NativeCommandException]::new(
+            "$($MyInvocation.ScriptName): Failed in Line $($MyInvocation.ScriptLineNumber)", $ProcessInfo)
     }
-    finally
-    {
-        $ErrorActionPreference = $backupErrorActionPreference
+    else {
+        return $ProcessInfo
     }
 }
 
-Invoke-NativeApplication -ScriptBlock { cmd /c "echo message1 & echo message2 & echo error3 1>&2 & echo error4 1>&2 & echo message5 & exit 1" }
