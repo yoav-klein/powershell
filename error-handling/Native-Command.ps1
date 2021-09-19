@@ -32,20 +32,25 @@ function Invoke-NativeApplication
     # case of ErrorAction=Stop
     $backupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
-    $AllOutput = & $ScriptBlock 2>&1
-    $ErrorActionPreference = $backupErrorActionPreference
-    
-    $Stdout = $AllOutput | ?{ $_ -isnot [System.Management.Automation.ErrorRecord]}
-    $Stderr = $AllOutput | ?{ $_ -is [System.Management.Automation.ErrorRecord]}
+    try {
+        $AllOutput = & $ScriptBlock 2>&1
+        
+        $Stdout = $AllOutput | ?{ $_ -isnot [System.Management.Automation.ErrorRecord]}
+        $Stderr = $AllOutput | ?{ $_ -is [System.Management.Automation.ErrorRecord]}
 
-    $ProcessInfo = [ProcessInfo]::new($LastExitCode, $Stdout, $Stderr)
-    if (($AllowedExitCodes -notcontains $LASTEXITCODE) -and (-not $IgnoreExitCode))
-    {
-        throw [NativeCommandException]::new(
-            "$($MyInvocation.ScriptName): Failed in Line $($MyInvocation.ScriptLineNumber)", $ProcessInfo)
+        $ProcessInfo = [ProcessInfo]::new($LastExitCode, $Stdout, $Stderr)
+        if (($AllowedExitCodes -notcontains $LASTEXITCODE) -and (-not $IgnoreExitCode))
+        {
+            throw [NativeCommandException]::new(
+                "$($MyInvocation.ScriptName): Failed in Line $($MyInvocation.ScriptLineNumber)", $ProcessInfo)
+        }
+        else {
+            return $ProcessInfo
+        }
     }
-    else {
-        return $ProcessInfo
+    finally {
+        $ErrorActionPreference = $backupErrorActionPreference
     }
+    
 }
 
