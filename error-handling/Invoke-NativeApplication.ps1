@@ -27,7 +27,7 @@ function Invoke-NativeApplication
         [int[]] $AllowedExitCodes = @(0),
         [switch]$IgnoreExitCode
     )
-  
+    
     # Setting ErrorActionPreference to Continue so that piping STDERR to STDOUT won't throw an exception in 
     # case of ErrorAction=Stop
     $backupErrorActionPreference = $ErrorActionPreference
@@ -47,6 +47,9 @@ function Invoke-NativeApplication
         else {
             return $ProcessInfo
         }
+    }
+    catch [System.Management.Automation.CommandNotFoundException] {
+        throw
     }
     finally {
         $ErrorActionPreference = $backupErrorActionPreference
