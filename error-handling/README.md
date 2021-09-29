@@ -45,8 +45,8 @@ The problem with this is exiting non-gracefully.
 In case of option (2) - In order to take care of every invocation specifically - i.e. check the output of the command and produce a custom message accordingly - the user will have a `try catch` block for every invocation - which raises the question - what did we achieve here anyway?
 </div>
 
-## Invoke-NativeApplication
-The `Invoke-NativeApplication` function is a helper function for invoking native applications.
+## Invoke-NativeCommand
+The `Invoke-NativeCommand` function is a helper function for invoking native applications.
 
 ### Parameters
 1. The command to execute
