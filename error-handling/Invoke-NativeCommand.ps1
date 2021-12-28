@@ -19,7 +19,7 @@ class NativeCommandException : Exception {
     }
 }
 
-function Invoke-NativeApplication
+function Invoke-NativeCommand
 {
     param
     (
@@ -30,7 +30,6 @@ function Invoke-NativeApplication
     
     # Setting ErrorActionPreference to Continue so that piping STDERR to STDOUT won't throw an exception in 
     # case of ErrorAction=Stop
-    $backupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     try {
         $AllOutput = & $ScriptBlock 2>&1
@@ -51,9 +50,5 @@ function Invoke-NativeApplication
     catch [System.Management.Automation.CommandNotFoundException] {
         throw
     }
-    finally {
-        $ErrorActionPreference = $backupErrorActionPreference
-    }
-    
 }
 
