@@ -1,7 +1,7 @@
 
 
-$apikey = "xxx"
-$baseUrl = "https://your-artifactory-server/artifactory"
+$apikey = $env:APIKEY
+$baseUrl = "https://cyberark.jfrog.io/artifactory"
 
 
 $Headers = @{
@@ -10,8 +10,15 @@ $Headers = @{
 }
 
 function ListFiles() {
-    $listUrl = '/api/storage/digi-generic-deployment-dev?list'
+    $repo = "digi-gradle-latest-local"
+    $listUrl = '/api/storage/digi-gradle-latest-local/com/cyberark/digi/application-service-sdk?list'
     $(Invoke-RestMethod -Headers $Headers -Uri "$baseUrl$listUrl").files
+}
+
+function DownloadFile() {
+    $repo = "digi-gradle-latest-local"
+    $path = '/com/cyberark/digi/application-service-sdk/ivy-1.0.1101.xml'
+    Invoke-RestMethod -Headers $Headers -Uri "$baseUrl/$repo/$path"
 }
 
 # FOR SOME REASON DOESN'T WORK IN Invoke-RestMethod
@@ -30,12 +37,18 @@ function MoveArtifacts() {
 }
 
 function Upload() {
-    $repo = "digi-generic-deployment-dev"
-    $path = "testupload"
+    $repo = "digi-gradle-latest-local"
+    $path = "com/cyberark/digi/application-service-sdk/2.2.1701"
     $file = "test-file.txt"
 
     Invoke-RestMethod -Headers $Headers -Method PUT -InFile $file -Uri "$baseUrl/$repo/$path/$file"
-   
 }
 
-MoveArtifacts
+function Delete() {
+    $repo = "digi-gradle-dev-local"
+    $path = "com/yoav/app"
+
+    Invoke-RestMethod -Headers $Headers -Method DELETE -Uri "$baseUrl/$repo/$path"
+}
+
+Delete
